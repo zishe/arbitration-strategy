@@ -101,7 +101,7 @@ class Account {
   // TODO: покупка акций в цикле, пока это возможно на каждой свече
   next(quote: HistoricalPrice) {
     const { cash, stocks, lastPrice, lastHigh, lastLow } = this.state;
-    // console.log(quote);
+    console.log(quote);
     // console.log(this.state);
     // console.log(lastHigh - quote.low);
     const n = 1;
@@ -185,8 +185,7 @@ export default function Main() {
     log += line + '\n';
   }
   account.init(tqqq[start]);
-  addLine(account.marketCap());
-  addLine(account.show());
+  // addLine(account.show());
 
   // addLine(tqqq[0].open);
   // addLine(tqqq[tqqq.length - 1].close);
@@ -203,7 +202,6 @@ export default function Main() {
     }
 
   });
-  addLine(account.marketCap());
   addLine(account.show());
 
   return (
