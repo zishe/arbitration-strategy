@@ -45,6 +45,8 @@ export interface Portfolio {
   minStocks: number; // minimum amount of stocks in percent of marketCap
 }
 
+const start = 800;
+
 class Account {
   // state: Portfolio;
   constructor(public state: Portfolio) {
@@ -104,7 +106,7 @@ class Account {
     console.log(quote);
     // console.log(this.state);
     // console.log(lastHigh - quote.low);
-    const n = 1;
+    const n = 2;
     if (quote.low < lastPrice && cash > quote.high * n) {
       // day is lower then previous
       // при какой цене можно будет купить еще 1 акцию
@@ -130,8 +132,8 @@ class Account {
       // Price * (StockAmount - N) = Cash * (0.6 + lastHigh/lastHigh)  - Cash*Price/lastHigh + StockAmount * Price * (0.6 + lastHigh/lastHigh) - StockAmount * Price * Price/lastHigh
       // Price * Price * StockAmount / lastHigh + Price * (StockAmount - N + Cash/lastHigh - StockAmount * 1.6) - Cash * 1.6 = 0
       const a = stocks / lastHigh;
-      const b = (-n + cash/lastHigh - stocks * 0.55);
-      const c = - cash * 1.55;
+      const b = (-n + cash/lastHigh - stocks * 0.65);
+      const c = - cash * 1.65;
       // console.log(a, b, c);
       const d = b * b - 4 * a * c;
       if (d < 0) return;
@@ -147,24 +149,23 @@ class Account {
 
   marketCap() {
     if (!this.state) return '';
-    return this.state.cash + this.state.stocks * this.state.lastPrice;
+    return Math.round(this.state.cash + this.state.stocks * this.state.lastPrice);
   }
 
   show() {
     if (!this.state) return '';
-    return `${this.state.cash} cash, ${this.state.stocks} stocks, ${this.marketCap()} cap`
+    return `${Math.round(this.state.cash)} cash, ${this.state.stocks} stocks, ${this.marketCap()} cap`
   }
 }
 
-const start = 100;
-
 function Simple() {
-  const canByStocks = Math.ceil(10000 / tqqq[start].open);
+  const stocks = Math.floor(10000 / tqqq[start].open);
+  const cash = Math.round(10000 - stocks * tqqq[start].open);
   const lastPrice = tqqq[tqqq.length - 1].close;
 
   return (
     <pre>
-      {`${canByStocks * lastPrice} with ${canByStocks} stocks`}
+      {`${cash} cash, ${stocks} stocks, ${cash + Math.round(stocks * lastPrice)} cap`}
     </pre>
   )
 }
