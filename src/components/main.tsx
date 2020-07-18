@@ -35,32 +35,51 @@ export interface HistoricalPrice {
   readonly changePercent: number;
 }
 
-export interface State {
-  balance: number;
-  stocks: number;
-  marketCap: number;
-  startInvestment: number;
-  getState: () => string;
+export interface Portfolio {
+  cash: number; // cash in usd
+  stocks: number; // amount of stocks (TQQQ)
+  lastPrice?: number; // last close price
+  lastHigh?: number; // the highest price
+  lastLow?: number; // the lowest price
+  marketCap?: number; // all assets by actual price
+  startAmount: number; // how much to invest in stocks at the start
+  minStocks: number; // minimum amount of stocks in percent of marketCap
+}
+
+const start = 100;
+
+function Simple() {
+  const canByStocks = Math.ceil(10000 / tqqq[start].open);
+  const lastPrice = tqqq[tqqq.length - 1].close;
+
+  return (
+    <pre>
+      {`${canByStocks * lastPrice} with ${canByStocks} stocks`}
+    </pre>
+  )
 }
 
 export default function Main() {
+  const state: Portfolio = {
+    cash: 10000,
+    stocks: 0,
+    startAmount: 0.5,
+    minStocks: 0.5
+  }
   let log = ''
   let addLine = (line: any) => {
     log += line + '\n';
   }
+
   // addLine(tqqq[0].open);
   // addLine(tqqq[tqqq.length - 1].close);
-  let strt = 100;
-  const canByStocks = Math.ceil(10000 / tqqq[strt].open);
-  const lastPrice = tqqq[tqqq.length - 1].close;
-  addLine(tqqq[strt]);
-  addLine(`Balance if buy at the start: ${canByStocks * lastPrice} with ${canByStocks} stocks`);
+  let i = start;
 
-  let stocks = Math.ceil(5000 / tqqq[strt].open);
-  let balance = 10000 - stocks * tqqq[strt].open;
-  let maxPrice = tqqq[strt].high;
-  let minPrice = tqqq[strt].low;
-  let whenBuyingMaxPrice = tqqq[strt].high;
+  let stocks = Math.ceil(5000 / tqqq[i].open);
+  let cash = 10000 - stocks * tqqq[i].open;
+  let maxPrice = tqqq[i].high;
+  let minPrice = tqqq[i].low;
+  let whenBuyingMaxPrice = tqqq[i].high;
   addLine(`Initial stocks: ${stocks}`);
   let amounts = {};
   const buythreshold: { [key: number]: number } = {
@@ -94,10 +113,10 @@ export default function Main() {
   let freeze = 0;
   let x = 0
   tqqq.forEach((quote: HistoricalPrice, i: number) => {
-    addLine(Date.parse(quote.date).toString());
+    // addLine(Date.parse(quote.date).toString());
 
     x += 1;
-    if (x <= strt) return;
+    if (x <= i) return;
     if (freeze > 0) freeze -= 1;
 
     if (quote.high > maxPrice) {
@@ -106,32 +125,32 @@ export default function Main() {
 
     let whenBuyPrice = maxPrice * buythreshold[level];
 
-    if (quote.low < whenBuyPrice && balance > whenBuyPrice && level < 7) {
-      const newAmount = Math.ceil(byingAmount[level] * balance / whenBuyPrice);
+    if (quote.low < whenBuyPrice && cash > whenBuyPrice && level < 7) {
+      const newAmount = Math.ceil(byingAmount[level] * cash / whenBuyPrice);
       stocks += newAmount;
-      balance -= newAmount * whenBuyPrice;
+      cash -= newAmount * whenBuyPrice;
       level += 1;
       addLine(level);
       // minPrice = whenBuyPrice;
       whenBuyingMaxPrice = maxPrice;
-      addLine(`Price ${quote.low} is lower then a trashold ${Math.round(whenBuyPrice)}, buy ${newAmount} stocks by price ${whenBuyPrice}`);
-      addLine(`Cash: ${Math.round(balance)}, stocks: ${stocks}, all: ${Math.round(quote.close * stocks + balance)}, level: ${level}`);
+      // addLine(`Price ${quote.low} is lower then a trashold ${Math.round(whenBuyPrice)}, buy ${newAmount} stocks by price ${whenBuyPrice}`);
+      // addLine(`Cash: ${Math.round(cash)}, stocks: ${stocks}, all: ${Math.round(quote.close * stocks + cash)}, level: ${level}`);
     }
 
     whenBuyPrice = maxPrice * buythreshold[level];
     // addLine(whenBuyPrice);
 
-    if (quote.low < whenBuyPrice && balance > whenBuyPrice && level < 7) {
-      const newAmount = Math.ceil(byingAmount[level] * balance / whenBuyPrice);
+    if (quote.low < whenBuyPrice && cash > whenBuyPrice && level < 7) {
+      const newAmount = Math.ceil(byingAmount[level] * cash / whenBuyPrice);
       stocks += newAmount;
-      balance -= newAmount * whenBuyPrice;
+      cash -= newAmount * whenBuyPrice;
       level += 1;
       addLine(level);
       // minPrice = quote.low;
       // minPrice = whenBuyPrice;
       whenBuyingMaxPrice = maxPrice;
-      addLine(`Price ${quote.low} is lower then a trashold ${Math.round(whenBuyPrice)}, buy ${newAmount} stocks by price ${whenBuyPrice}`);
-      addLine(`Cash: ${Math.round(balance)}, stocks: ${stocks}, all: ${Math.round(quote.close * stocks + balance)}, level: ${level}`);
+      // addLine(`Price ${quote.low} is lower then a trashold ${Math.round(whenBuyPrice)}, buy ${newAmount} stocks by price ${whenBuyPrice}`);
+      // addLine(`Cash: ${Math.round(cash)}, stocks: ${stocks}, all: ${Math.round(quote.close * stocks + cash)}, level: ${level}`);
     }
 
     // if (whenBuyPrice < minPrice && level > 1) {
@@ -139,27 +158,30 @@ export default function Main() {
     // }
 
     const whenSellPrice = whenBuyingMaxPrice * selltrashold[level];
-    if (quote.high > whenSellPrice && balance < (stocks * whenSellPrice) && freeze === 0) {
+    if (quote.high > whenSellPrice && cash < (stocks * whenSellPrice) && freeze === 0) {
       let sellingAmount; 
       if (level === 1) {
         freeze = 5;
-        sellingAmount = Math.ceil((stocks * quote.open - balance) * 0.1 / quote.open)
+        sellingAmount = Math.ceil((stocks * quote.open - cash) * 0.1 / quote.open)
       } else {
         sellingAmount = Math.ceil(stocks * 0.07);
       }
       stocks -= sellingAmount;
-      balance += sellingAmount * whenSellPrice;
+      cash += sellingAmount * whenSellPrice;
       if (level > 1) level -= 1;
-      addLine(`Price ${quote.high} is higher then a trashold ${Math.round(whenSellPrice)}, selling ${sellingAmount} stocks by price ${whenSellPrice}`);
-      addLine(`Cash: ${Math.round(balance)}, stocks: ${stocks}, all: ${Math.round(quote.close * stocks + balance)}, level: ${level}`);
+      // addLine(`Price ${quote.high} is higher then a trashold ${Math.round(whenSellPrice)}, selling ${sellingAmount} stocks by price ${whenSellPrice}`);
+      // addLine(`Cash: ${Math.round(cash)}, stocks: ${stocks}, all: ${Math.round(quote.close * stocks + cash)}, level: ${level}`);
     }
     // addLine(quote as HistoricalPrice);
   });
-  addLine(`Balance: ${balance + stocks * lastPrice}`);
+  addLine(`cash: ${cash + stocks * tqqq[tqqq.length - 1].close}`);
 
   return (
-    <pre>
-      {log}
-    </pre>
+    <>
+      <Simple />
+      <pre>
+        {log}
+      </pre>
+    </>
   );
 }
