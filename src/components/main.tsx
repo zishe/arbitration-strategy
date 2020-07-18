@@ -60,15 +60,20 @@ class Account {
       lastPrice: quote.close,
       cash: cash - stockAmount * quote.open,
       lastHigh: quote.high,
-      lastLow: quote.low,
+      lastLow: quote.open,
     }
   }
 
   close(quote: HistoricalPrice) {
     const { cash, stocks, lastHigh, lastLow } = this.state;
     this.state.lastPrice = quote.close;
-    if (quote.high > lastHigh) this.state.lastHigh = quote.high;
-    if (quote.low < lastLow) this.state.lastLow = quote.low;
+    if (quote.high > lastHigh) {
+      this.state.lastHigh = quote.high;
+      this.state.lastLow = quote.low;
+    }
+    if (quote.low < lastLow) {
+      this.state.lastLow = quote.low;
+    }
   }
 
   buy(price: number, amount: number) {
@@ -82,12 +87,14 @@ class Account {
     }
   }
 
+  // TODO: покупка акций в цикле, пока это возможно на каждой свече
   next(quote: HistoricalPrice) {
-    const { cash, stocks, lastPrice, lastHigh } = this.state;
+    const { cash, stocks, lastPrice, lastHigh, lastLow } = this.state;
     console.log(quote);
+    console.log(this.state);
     // console.log(lastHigh - quote.low);
     const n = 2;
-    if (lastHigh - quote.low && cash > quote.high * 2) {
+    if (lastPrice > quote.low && cash > quote.high * n) {
       // day is lower then previous
       // при какой цене можно будет купить еще 1 акцию
       // Price * (StockAmount + 1) = (Cash + StockAmount * Price) * (0.5 + (lastHigh - Price) / lastHigh)
@@ -106,6 +113,25 @@ class Account {
       if (price > quote.low) this.buy(price, n);
     }
 
+    // if (lastHigh - quote.low && cash > quote.high * 2) {
+    //   // day is lower then previous
+    //   // при какой цене можно будет купить еще 1 акцию
+    //   // Price * (StockAmount + 1) = (Cash + StockAmount * Price) * (0.5 + (lastHigh - Price) / lastHigh)
+    //   // Price * (StockAmount + 1) = Cash * (0.5 + lastHigh/lastHigh - Price/lastHigh) + StockAmount * Price * (0.5 + lastHigh/lastHigh - Price/lastHigh)
+    //   // Price * (StockAmount + 1) = Cash * (0.5 + lastHigh/lastHigh)  - Cash*Price/lastHigh + StockAmount * Price * (0.5 + lastHigh/lastHigh) - StockAmount * Price * Price/lastHigh
+    //   // Price * Price * StockAmount /lastHigh + Price * (StockAmount + N + Cash/lastHigh - StockAmount * 1.5) - Cash * 1.5 = 0
+    //   const a = stocks / lastHigh;
+    //   const b = (n + cash/lastHigh - stocks * 0.5);
+    //   const c = - cash * 1.5;
+    //   // console.log(a, b, c);
+    //   const d = b * b - 4 * a * c;
+    //   if (d < 0) return;
+    //   // console.log(d);
+    //   const price = (-b + Math.sqrt(d)) / (2 * a);
+    //   // console.log(price);
+    //   if (price > quote.low) this.buy(price, n);
+    // }
+
     this.close(quote);
     console.log(this.show());
   }
@@ -117,7 +143,7 @@ class Account {
 
   show() {
     if (!this.state) return '';
-    return `${this.state.cash} cash, ${this.state.stocks} stocks`
+    return `${this.state.cash} cash, ${this.state.stocks} stocks, ${this.marketCap()} cap`
   }
 }
 
