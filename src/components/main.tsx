@@ -1,5 +1,4 @@
 import React from 'react';
-import { tqqq } from '../data/tqqq'
 
 export interface HistoricalPrice {
   readonly symbol?: string;
@@ -45,7 +44,7 @@ export interface Portfolio {
   minStocks: number; // minimum amount of stocks in percent of marketCap
 }
 
-const start = 800;
+export const start = 50;
 
 class Account {
   // state: Portfolio;
@@ -158,19 +157,7 @@ class Account {
   }
 }
 
-function Simple() {
-  const stocks = Math.floor(10000 / tqqq[start].open);
-  const cash = Math.round(10000 - stocks * tqqq[start].open);
-  const lastPrice = tqqq[tqqq.length - 1].close;
-
-  return (
-    <pre>
-      {`${cash} cash, ${stocks} stocks, ${cash + Math.round(stocks * lastPrice)} cap`}
-    </pre>
-  )
-}
-
-export default function Main() {
+export default function Main({ quotes }: { quotes: HistoricalPrice[] }) {
   const account = new Account({
     cash: 10000,
     stocks: 0,
@@ -185,15 +172,13 @@ export default function Main() {
   let addLine = (line: any) => {
     log += line + '\n';
   }
-  account.init(tqqq[start]);
+  account.init(quotes[start]);
   // addLine(account.show());
 
-  // addLine(tqqq[0].open);
-  // addLine(tqqq[tqqq.length - 1].close);
   let i = start;
 
-  let maxPrice = tqqq[i].high;
-  tqqq.forEach((quote: HistoricalPrice, i: number) => {
+  let maxPrice = quotes[i].high;
+  quotes.forEach((quote: HistoricalPrice, i: number) => {
     // addLine(Date.parse(quote.date).toString());
     if (i < start) return;
     account.next(quote);
@@ -207,7 +192,6 @@ export default function Main() {
 
   return (
     <>
-      <Simple />
       <pre>
         {log}
       </pre>
